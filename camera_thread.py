@@ -1,8 +1,9 @@
-from datetime import datetime, date
-from threading import Thread
+from timelapse_thread import TimelapseThread
+from timelapse import Timelapse
+from threading import Thread, Lock
 from camera import Camera
+from frame import Frame
 from log import Log
-import glob
 import cv2
 import os
 
@@ -12,12 +13,19 @@ class CameraThread(Thread):
         Thread.__init__(self)
         self.camera = camera
         self.save = save
+        self._new_frames = []
+        self._lock = Lock()
+
+    def run(self) -> None:
+        self._lock.acquire()
+        self.open_connection()
+        self._lock.release()
 
     # Open connection to camera
     def open_connection(self):
         os.environ['OPENCV_FFMPEG_CAPTURE_OPTIONS'] = 'rtsp_transport;udp'
-
         camera_connection = cv2.VideoCapture(self.camera.rtsp_url, cv2.CAP_FFMPEG)
+
         if not camera_connection.isOpened():
             Log.logger().error('Could not open connection to {name}'.format(name=self.camera.name))
             return
@@ -29,28 +37,20 @@ class CameraThread(Thread):
         _, frame = connection.read()
         connection.release()
 
-        timestamp = int(datetime.now().timestamp())
         if _ and frame is not None:
-            datestamp = date.today().strftime('%Y-%m-%d')
-            Log.logger().info('[{name}] Photo taken ({timestamp}.jpg)'.format(name=self.camera.name, timestamp=time))
-            cv2.imwrite('{path}/{date}/{timestamp}.jpg'.format(path=self.camera.images_folder, date=datestamp, timestamp=timestamp), frame)
+            captured_frame: Frame = Frame(camera=self.camera, image=frame, timestamp=self.camera.timestamp)
+            captured_frame.save()
+
+            Log.logger().info('[{name}] Photo taken ({timestamp}.png)'.format(
+                name=captured_frame.camera.name,
+                timestamp=captured_frame.timestamp)
+            )
 
         if self.save:
             self.build_video()
 
     def build_video(self):
-        img_array = []
-        datestamp = date.today().strftime('%Y-%m-%d')
-        files = glob.glob('{path}/{date}/*.jpg'.format(path=self.camera.images_folder, date=datestamp))
-        files.sort()
-        for filename in files:
-            img = cv2.imread(filename)
-            height, width, layers = img.shape
-            size = (width,height)
-            img_array.append(img)
-
-        datestamp = datetime.date.today().strftime('%Y-%m-%d')
-        out = cv2.VideoWriter('{path}/{name}.mp4'.format(path=self.camera.camera_folder, name=datestamp),cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
-        for i in range(len(img_array)):
-            out.write(img_array[i])
-        out.release()
+        timelapse = Timelapse(camera=self.camera)
+        timelapse_thread = TimelapseThread(timelapse=timelapse)
+        timelapse_thread.start()
+        timelapse_thread.join()

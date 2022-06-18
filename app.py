@@ -12,6 +12,7 @@ class Application(object):
         self.config = Config()
         self.camera_configs = list(self.config.get_setting('cameras'))
         self.camera_threads = []
+        self.cameras = []
         self.boot_day = int(date.today().strftime('%d'))
         self.__version = 1.0
         Log('timelapser')
@@ -19,19 +20,21 @@ class Application(object):
     def boot(self):
         Log.logger().info('timelapser by nortoh v{version}'.format(version=self.__version))
 
-        self.delay = self.config.get_setting('delay')
+        self.delay = int(self.config.get_setting('delay'))
+        self.cleanup_cycles_limit = int(self.config.get_setting('cleanup_cycles_limit'))
 
-        if (self.delay is None or self.delay < 0):
-            Log.logger().error('Invalid delay')
+        if (self.delay is None or self.delay < 0 or self.cleanup_cycles_limit is None):
+            Log.logger().error('Invalid configuration file')
             os._exit(1)
 
-        Log.logger().info('Delay is set to {delay} seconds'.format(delay=self.delay))
+        Log.logger().info('delay: {delay} seconds, cleanup_cycles_limit: {cleanup_cycles_limit}'.format(delay=self.delay, cleanup_cycles_limit=self.cleanup_cycles_limit))
 
         grammar = ('camera', 'cameras')[len(self.camera_configs) > 1]
         Log.logger().info('Collected {configs} {grammar}'.format(configs=len(self.camera_configs), grammar=grammar))
 
         for camera_config in self.camera_configs:
             camera = Camera(configuration=camera_config)
+            self.cameras.append(camera)
 
             datestamp = date.today().strftime('%Y-%m-%d')
             if not os.path.isdir('camera_data/{name}/images/{date}'.format(name=camera.name, date=datestamp)):
@@ -48,25 +51,20 @@ class Application(object):
                     datestamp = date.today().strftime('%Y-%m-%d')
 
                     path = 'camera_data/{name}/images/{date}'.format(name=camera.name, date=datestamp)
+
                     if not os.path.isdir(path):
                         os.makedirs(path)
 
-                    for camera_config in self.camera_configs:
-                        camera = Camera(configuration=camera_config)
-                        self.start_camera_thread(camera=camera, save=True)
-                else:
-                    for camera_config in self.camera_configs:
-                        camera = Camera(configuration=camera_config)
+                for camera in self.cameras:
                         self.start_camera_thread(camera=camera, save=True)
 
-                sleep(int(self.config.get_setting('delay')))
+                sleep(self.delay)
         except KeyboardInterrupt as e:
             Log.logger().warning('STOPPING THREAD')
 
     def start_camera_thread(self, camera: Camera, save: bool):
         thread = CameraThread(camera=camera, save=save)
         thread.start()
-        thread.open_connection()
         thread.join()
 
 if __name__ == '__main__':

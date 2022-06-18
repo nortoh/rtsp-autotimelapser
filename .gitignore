@@ -2,7 +2,9 @@ bin/
 lib/
 logs/
 data/
+dist/
 lib64
+build/
 lib64/
 include/
 __pycache__/
@@ -10,3 +12,5 @@ camera_data/
 pyvenv.cfg
 *.pyc
 *.jpg
+app.spec
+camera_data_old/

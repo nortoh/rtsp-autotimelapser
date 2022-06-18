@@ -63,6 +63,7 @@ class Config(object):
         {
             "configuration": {
                 "delay": 10,
+                "cleanup_cycles_limit": 5,
                 "cameras": []
             }
         }
