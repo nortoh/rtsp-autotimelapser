@@ -1,0 +1,12 @@
+bin/
+lib/
+logs/
+data/
+lib64
+lib64/
+include/
+__pycache__/
+camera_data/
+pyvenv.cfg
+*.pyc
+*.jpg
