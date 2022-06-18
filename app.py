@@ -13,10 +13,11 @@ class Application(object):
         self.camera_configs = list(self.config.get_setting('cameras'))
         self.camera_threads = []
         self.boot_day = int(date.today().strftime('%d'))
+        self.__version = 1.0
         Log('timelapser')
 
     def boot(self):
-        Log.logger().info('Booting timelapser by nortoh')
+        Log.logger().info('timelapser by nortoh v{version}'.format(version=self.__version))
 
         self.delay = self.config.get_setting('delay')
 
@@ -27,7 +28,7 @@ class Application(object):
         Log.logger().info('Delay is set to {delay} seconds'.format(delay=self.delay))
 
         grammar = ('camera', 'cameras')[len(self.camera_configs) > 1]
-        Log.logger().info(f'Collected {len(self.camera_configs)} {grammar}')
+        Log.logger().info('Collected {configs} {grammar}'.format(configs=len(self.camera_configs), grammar=grammar))
 
         for camera_config in self.camera_configs:
             camera = Camera(configuration=camera_config)
