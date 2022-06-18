@@ -32,8 +32,9 @@ class CameraThread(Thread):
 
         time = int(datetime.datetime.now().timestamp())
         if _ and frame is not None:
+            datestamp = datetime.date.today().strftime('%Y-%m-%d')
             Log.logger().info('[{name}] Photo taken ({timestamp}.jpg)'.format(name=self.camera.name, timestamp=time))
-            cv2.imwrite('{path}/{timestamp}.jpg'.format(path=self.camera.images_folder, timestamp=time), frame)
+            cv2.imwrite('{path}/{date}/{timestamp}.jpg'.format(path=self.camera.images_folder, date=datestamp, timestamp=time), frame)
 
         if self.save:
             Log.logger().info('Midnight! Saving video....')
@@ -41,7 +42,8 @@ class CameraThread(Thread):
 
     def build_video(self):
         img_array = []
-        files = glob.glob('{path}/*.jpg'.format(path=self.camera.images_folder))
+        datestamp = datetime.date.today().strftime('%Y-%m-%d')
+        files = glob.glob('{path}/{date}/*.jpg'.format(path=self.camera.images_folder, date=datestamp))
         files.sort()
         for filename in files:
             img = cv2.imread(filename)
@@ -49,7 +51,8 @@ class CameraThread(Thread):
             size = (width,height)
             img_array.append(img)
 
-        out = cv2.VideoWriter('{path}/video.mp4'.format(path=self.camera.camera_folder),cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
+        datestamp = datetime.date.today().strftime('%Y-%m-%d')
+        out = cv2.VideoWriter('{path}/{name}.mp4'.format(path=self.camera.camera_folder, name=datestamp),cv2.VideoWriter_fourcc(*'mp4v'), 15, size)
 
         for i in range(len(img_array)):
             out.write(img_array[i])

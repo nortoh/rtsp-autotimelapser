@@ -1,4 +1,3 @@
-from curses import KEY_BTAB
 from config import Config
 from log import Log
 from camera_thread import CameraThread
@@ -33,8 +32,9 @@ class Application(object):
         for camera_config in self.camera_configs:
             camera = Camera(configuration=camera_config)
 
-            if not os.path.isdir('camera_data/{name}/images'.format(name=camera.name)):
-                os.makedirs('camera_data/{name}/images/'.format(name=camera.name))
+            datestamp = date.today().strftime('%Y-%m-%d')
+            if not os.path.isdir('camera_data/{name}/images/{date}'.format(name=camera.name, date=datestamp)):
+                os.makedirs('camera_data/{name}/images/{date}'.format(name=camera.name, date=datestamp))
 
         self.start()
 
@@ -44,6 +44,12 @@ class Application(object):
                 current_day = int(date.today().strftime('%d'))
                 if current_day != self.boot_day:
                     self.boot_day = current_day
+                    datestamp = date.today().strftime('%Y-%m-%d')
+
+                    path = 'camera_data/{name}/images/{date}'.format(name=camera.name, date=datestamp)
+                    if not os.path.isdir(path):
+                        os.makedirs(path)
+
                     for camera_config in self.camera_configs:
                         camera = Camera(configuration=camera_config)
                         self.start_camera_thread(camera=camera, save=True)
