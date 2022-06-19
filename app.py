@@ -14,20 +14,20 @@ class Application(object):
         self.camera_threads = []
         self.cameras = []
         self.boot_day = int(date.today().strftime('%d'))
-        self.__version = 1.0
+        self.__version = 1.1
         Log('timelapser')
 
     def boot(self):
         Log.logger().info('timelapser by nortoh v{version}'.format(version=self.__version))
 
         self.delay = int(self.config.get_setting('delay'))
-        self.cleanup_cycles_limit = int(self.config.get_setting('cleanup_cycles_limit'))
+        self.cycles_limit = int(self.config.get_setting('cycles_limit'))
 
-        if (self.delay is None or self.delay < 0 or self.cleanup_cycles_limit is None):
+        if (self.delay is None or self.delay < 0 or self.cycles_limit is None):
             Log.logger().error('Invalid configuration file')
             os._exit(1)
 
-        Log.logger().info('delay: {delay} seconds, cleanup_cycles_limit: {cleanup_cycles_limit}'.format(delay=self.delay, cleanup_cycles_limit=self.cleanup_cycles_limit))
+        Log.logger().info('delay: {delay} seconds, cycles_limit: {cycles_limit}'.format(delay=self.delay, cycles_limit=self.cycles_limit))
 
         grammar = ('camera', 'cameras')[len(self.camera_configs) > 1]
         Log.logger().info('Collected {configs} {grammar}'.format(configs=len(self.camera_configs), grammar=grammar))

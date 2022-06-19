@@ -3,6 +3,7 @@ from timelapse import Timelapse
 from threading import Thread, Lock
 from camera import Camera
 from frame import Frame
+from config import Config
 from log import Log
 import cv2
 import os
@@ -43,11 +44,19 @@ class CameraThread(Thread):
 
             Log.logger().info('[{name}] Photo taken ({timestamp}.png)'.format(
                 name=captured_frame.camera.name,
-                timestamp=captured_frame.timestamp)
-            )
+                timestamp=captured_frame.timestamp
+            ))
 
         if self.save:
-            self.build_video()
+            if self.camera.cycles > int(Config.get_setting('cycles_limit')):
+                self.camera.cycles = 0
+
+                self.build_video()
+            else:
+                self.camera.cycles += 1
+                Log.logger().info('({camera}) Cycle: {cycles}'.format(
+                    camera=self.camera.name, cycles=self.camera.cycles
+                ))
 
     def build_video(self):
         timelapse = Timelapse(camera=self.camera)

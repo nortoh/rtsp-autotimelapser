@@ -7,6 +7,7 @@ class Camera(object):
         self._name = configuration['name']
         self._rtsp = configuration['rtsp']
         self.cleanup_cycles = 0
+        self.cycles = 0
 
         if (self._name is None or self._rtsp is None):
             Log.logger().error('Missing camera data')
