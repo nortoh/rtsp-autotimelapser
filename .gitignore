@@ -14,3 +14,4 @@ pyvenv.cfg
 *.jpg
 app.spec
 camera_data_old/
+camera_data_old2/
