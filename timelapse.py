@@ -4,10 +4,11 @@ from frame import Frame
 from log import Log
 import glob
 import cv2
+import os
 
 class Timelapse(object):
 
-    SIMILARITY_MAX = 0.458
+    SIMILARITY_MAX = 0.465
 
     def __init__(self, camera: Camera):
         self.frames = []
@@ -21,8 +22,9 @@ class Timelapse(object):
 
         for filename in files:
             timestamp = int(filename.split('/')[-1].split('.')[0])
-
             image = cv2.imread(filename)
+            if image is None:
+                continue
             frame = Frame(camera=self.camera, image=image, timestamp=timestamp)
             height, width, _ = image.shape
             self.size = (width, height)
@@ -33,22 +35,17 @@ class Timelapse(object):
         if (len(self.frames) == 0):
             raise Exception('No frames found for timelapse obj')
 
-        cleaning_up = False
-        print(self.camera.cleanup_cycles)
-        print(int(Config.get_setting('cleanup_cycles_limit')))
-        if self.camera.cleanup_cycles > int(Config.get_setting('cleanup_cycles_limit')):
-            Log.logger().info('Cleaning up ugly frames!')
-            cleaning_up = True
-            self.camera.cleanup_cycles = 0
-
+        Log.logger().info('Saving video')
         out = cv2.VideoWriter('{path}/{name}.mp4'.format(path=self.camera.camera_folder, name=self.camera.datestamp),cv2.VideoWriter_fourcc(*'mp4v'), 15, self.size)
 
         previous_frame: Frame = self.frames[0]
+        bad_frames = 0
         for i in range(len(self.frames)):
             current_frame: Frame = self.frames[i]
+            (bad_frame, _) = self.is_bad_frame(current_frame=current_frame, previous_frame=previous_frame)
 
-            if self.is_bad_frame(current_frame=current_frame, previous_frame=previous_frame) and cleaning_up:
-                Log.logger().warning('Tossing bad frame ({frame})!'.format(frame=current_frame.timestamp))
+            if bad_frame:
+                bad_frames += 1
                 previous_frame = current_frame
                 continue
 
@@ -56,9 +53,9 @@ class Timelapse(object):
             previous_frame = current_frame
 
         out.release()
-        self.camera.cleanup_cycles +=1
-        Log.logger().info(self.camera.cleanup_cycles)
-        Log.logger().info('Saved video. cleanup_cycles: {cleanup_cycles}'.format(cleanup_cycles=self.camera.cleanup_cycles))
+        Log.logger().info('Saved video. Tossed {bad_frames} bad frames'.format(
+            bad_frames=bad_frames
+        ))
 
     # Does this frame make me look bad?
     def is_bad_frame(self, current_frame: Frame, previous_frame: Frame):
@@ -78,4 +75,4 @@ class Timelapse(object):
 
         #Log.logger().info('frame: {frame} - {similarity}'.format(frame=current_frame.timestamp, similarity=similarity))
 
-        return similarity > Timelapse.SIMILARITY_MAX
+        return (similarity > Timelapse.SIMILARITY_MAX, similarity)

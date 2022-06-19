@@ -21,5 +21,13 @@ class Frame(object):
     def timestamp(self) -> int:
         return self._timestamp
 
+    @property
+    def path(self) -> str:
+        return '{path}/{datestamp}/{timestamp}.png'.format(
+            path=self.camera.images_folder,
+            datestamp=self.camera.datestamp,
+            timestamp=self.timestamp
+        )
+
     def save(self):
-        cv2.imwrite('{path}/{datestamp}/{timestamp}.png'.format(path=self.camera.images_folder, datestamp=self.camera.datestamp, timestamp=self.timestamp), self.image)
+        cv2.imwrite(self.path, self.image)
