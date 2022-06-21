@@ -1,8 +1,10 @@
 from config import Config
 from log import Log
 from camera_thread import CameraThread
+from timelapse_thread import TimelapseThread
 from camera import Camera
-from datetime import date
+from timelapse import Timelapse
+from datetime import date, datetime
 from time import sleep
 import os
 
@@ -13,7 +15,7 @@ class Application(object):
         self.camera_configs = list(self.config.get_setting('cameras'))
         self.camera_threads = []
         self.cameras = []
-        self.boot_day = int(date.today().strftime('%d'))
+        self.hour = datetime.now().strftime('%H')
         self.__version = 1.1
         Log('timelapser')
 
@@ -45,18 +47,18 @@ class Application(object):
     def start(self):
         try:
             while True:
-                current_day = int(date.today().strftime('%d'))
-                if current_day != self.boot_day:
-                    self.boot_day = current_day
-                    datestamp = date.today().strftime('%Y-%m-%d')
+                current_hour = datetime.now().strftime('%H')
 
-                    path = 'camera_data/{name}/images/{date}'.format(name=camera.name, date=datestamp)
-
-                    if not os.path.isdir(path):
-                        os.makedirs(path)
+                if current_hour != self.hour:
+                    Log.logger().info('Time of the hour to save another beatiful timelapse')
+                    self.hour = current_hour
+                    for camera in self.cameras:
+                        timelapse_thread = TimelapseThread(timelapse=Timelapse(camera=camera))
+                        timelapse_thread.start()
+                        timelapse_thread.join()
 
                 for camera in self.cameras:
-                        self.start_camera_thread(camera=camera, save=True)
+                    self.start_camera_thread(camera=camera, save=True)
 
                 sleep(self.delay)
         except KeyboardInterrupt as e:

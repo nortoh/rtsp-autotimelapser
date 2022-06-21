@@ -1,6 +1,8 @@
 import cv2
 from datetime import date, datetime
 from camera import Camera
+from config import Config
+import os
 
 class Frame(object):
 
@@ -22,12 +24,23 @@ class Frame(object):
         return self._timestamp
 
     @property
-    def path(self) -> str:
-        return '{path}/{datestamp}/{timestamp}.png'.format(
-            path=self.camera.images_folder,
-            datestamp=self.camera.datestamp,
+    def fullpath(self) -> str:
+        return '{path}/{timestamp}.png'.format(
+            path=self.path,
             timestamp=self.timestamp
         )
 
+    @property
+    def path(self) -> str:
+        return '{path}/{datestamp}'.format(
+            path=self.camera.images_folder,
+            datestamp=self.camera.datestamp
+        )
+
     def save(self):
-        cv2.imwrite(self.path, self.image)
+        if not os.path.isdir(self.path):
+            os.makedirs('{path}/{datestamp}'.format(
+                path=self.camera.images_folder,
+                datestamp=self.camera.datestamp
+            ))
+        cv2.imwrite(self.fullpath, self.image, [int(cv2.IMWRITE_PNG_COMPRESSION), int(Config.get_setting('png_compression'))])

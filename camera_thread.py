@@ -33,33 +33,35 @@ class CameraThread(Thread):
 
         self.capture_photo(connection=camera_connection)
 
+        # Release camera connection when we are finished
+        camera_connection.release()
+        del camera_connection
+
     # Capture a photo
     def capture_photo(self, connection):
         _, frame = connection.read()
-        connection.release()
 
+        # Did we get a image?
         if _ and frame is not None:
             captured_frame: Frame = Frame(camera=self.camera, image=frame, timestamp=self.camera.timestamp)
             captured_frame.save()
 
-            Log.logger().info('[{name}] Photo taken ({timestamp}.png)'.format(
+            Log.logger().info('[{name}] Photo taken ({path})'.format(
                 name=captured_frame.camera.name,
-                timestamp=captured_frame.timestamp
+                path=captured_frame.fullpath
             ))
+            del captured_frame, frame, _
 
+        # Do we save our video?
         if self.save:
             if self.camera.cycles > int(Config.get_setting('cycles_limit')):
                 self.camera.cycles = 0
 
-                self.build_video()
+                timelapse_thread = TimelapseThread(timelapse=Timelapse(camera=self.camera))
+                timelapse_thread.start()
+                timelapse_thread.join()
             else:
                 self.camera.cycles += 1
                 Log.logger().info('({camera}) Cycle: {cycles}'.format(
                     camera=self.camera.name, cycles=self.camera.cycles
                 ))
-
-    def build_video(self):
-        timelapse = Timelapse(camera=self.camera)
-        timelapse_thread = TimelapseThread(timelapse=timelapse)
-        timelapse_thread.start()
-        timelapse_thread.join()

@@ -62,8 +62,11 @@ class Config(object):
         return """
         {
             "configuration": {
-                "delay": 10,
+                "delay": 300,
+                "png_compression": 0,
                 "cleanup_cycles_limit": 5,
+                "skip_bad_frames": false,
+                "similarity_max": 0.46,
                 "cameras": []
             }
         }

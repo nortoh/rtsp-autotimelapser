@@ -11,6 +11,5 @@ class TimelapseThread(Thread):
 
     def run(self) -> None:
         self._lock.acquire()
-        self._timelapse.load_frames()
         self._timelapse.save()
         self._lock.release()

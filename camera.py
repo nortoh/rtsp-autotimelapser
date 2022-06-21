@@ -22,7 +22,7 @@ class Camera(object):
 
     @property
     def images_folder(self):
-        return f'{self.camera_folder}/images'
+        return '{path}/images'.format(path=self.camera_folder)
 
     @property
     def camera_folder(self) -> str:
@@ -33,8 +33,15 @@ class Camera(object):
         return int(datetime.now().timestamp())
 
     @property
+    def hour(self) -> int:
+        return datetime.now().strftime('%H')
+    @property
     def datestamp(self) -> str:
         return date.today().strftime('%Y-%m-%d')
+
+    @property
+    def size(self) -> int:
+        return (1, 1)
 
     def reset_cycles(self):
         self.cleanup_cycles = 0
