@@ -19,7 +19,6 @@ class Timelapse(object):
         Log.logger().info('Saving video')
 
         out = cv2.VideoWriter('{path}/{datestamp}/{name}.mp4'.format(path=self.camera.images_folder, datestamp=self.camera.datestamp, name=self.camera.datestamp),cv2.VideoWriter_fourcc(*'mp4v'), 15, self.size)
-
         files = glob.glob('{path}/{datestamp}/*.png'.format(path=self.camera.images_folder, datestamp=self.camera.datestamp))
         files.sort()
 
@@ -43,8 +42,6 @@ class Timelapse(object):
 
             height, width, _ = image.shape
             self.size = (width, height)
-
-            #self.frames.append(frame)
             out.write(current_frame.image)
             previous_frame = current_frame
 
@@ -55,21 +52,21 @@ class Timelapse(object):
         del out
 
     # Does this frame make me look bad?
-    def is_bad_frame(self, current_frame: Frame, previous_frame: Frame):
+    def is_bad_frame(self, current_frame: Frame, previous_frame: Frame, use_blur: bool = False):
         frame_matrix_a: cv2.Mat = None
         frame_matrix_b: cv2.Mat = None
 
         frame_matrix_a = cv2.cvtColor(src=current_frame.image, code=cv2.COLOR_BGR2GRAY)
         frame_matrix_b = cv2.cvtColor(src=previous_frame.image, code=cv2.COLOR_BGR2GRAY)
 
-        kernal_size = (2, 2)
-        frame_matrix_a = cv2.blur(frame_matrix_a, kernal_size)
-        frame_matrix_b = cv2.blur(frame_matrix_b, kernal_size)
+        if use_blur:
+            kernal_size = (2, 2)
+            frame_matrix_a = cv2.blur(frame_matrix_a, kernal_size)
+            frame_matrix_b = cv2.blur(frame_matrix_b, kernal_size)
+
         frame_matrix_diff: cv2.Mat = cv2.subtract(src1=frame_matrix_b, src2=frame_matrix_a)
 
         height, width, _ = current_frame.image.shape
         similarity = cv2.countNonZero(src=frame_matrix_diff) / (width * height)
-
-        #Log.logger().info('frame: {frame} - {similarity}'.format(frame=current_frame.timestamp, similarity=similarity))
 
         return (similarity > Timelapse.SIMILARITY_MAX, similarity)
